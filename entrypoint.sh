@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
 set -e
 
-BASEDIR=${BASEDIR:="/wifi"}
+function get_channel() {
+    if [[ -f "${BASEDIR}/channel" ]]; then
+        echo $(cat "${BASEDIR}/channel")
+    else
+        echo 11
+    fi
+}
 
-INTERFACE=${INTERFACE:="wlan0"}
-DRIVER=${DRIVER:="nl80211"}
-SSID=${SSID:=$HOSTNAME}
+function calculate_psk() {
+    local PASSWORD_FILE=$1
+    if [[ -f "${PASSWORD_FILE}" ]]; then
+        echo $(wpa_passphrase "${SSID}" "$(cat ${PASSWORD_FILE})" | awk -F "=" '/[ \t]+psk=/ { print $2 }')
+        return 0
+    fi
+    return 23
+}
 
-if [[ ! -f "${BASEDIR}/enabled" ]]; then
-    echo "Wifi disabled."
-    exit 0
-fi
-echo "Configuring WIFI."
-CHANNEL=$([[ -f "${BASEDIR}/channel" ]] && cat "${BASEDIR}/channel")
-WPA_PSK=$([[ -f "${BASEDIR}/password" ]] && /usr/bin/wpa_passphrase "${SSID}" "$(cat ${BASEDIR}/password)" | awk -F "=" '/[ \t]+psk=/ { print $2 }')
-
-
-if [[ ! -f "${BASEDIR}/guest/enabled" ]]; then
-    echo "Guest WIFI disabled."
+function configure_wifi() {
+    echo "Configuring WIFI."
     cat << EOC > "/etc/hostapd/hostapd.conf"
 ctrl_interface=/var/run/hostapd
 driver=${DRIVER}
@@ -39,14 +41,12 @@ wpa=2
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 wpa_psk=${WPA_PSK}
-
-
 EOC
-else
-    # TODO: Add guest wifi section to config file
-    # TODO: Add password and SSID name to guest wifi config
-    #       echo /wifi/guest/{password} > "/etc/hostapd/hostapd.conf"
-    echo "Configuring guest wifi"
+    chmod 0644 "/etc/hostapd/hostapd.conf"
+}
+
+function configure_guest_wifi() {
+    echo "Configuring guest WIFI."
     WPA_PSK_GUEST=$([[ -f "${BASEDIR}/guest/password" ]] && /usr/bin/wpa_passphrase "${SSID}" "$(cat ${BASEDIR}/guest/password)" | awk -F "=" '/[ \t]+psk=/ { print $2 }')
     cat << EOC > "/etc/hostapd/hostapd.conf"
 ctrl_interface=/var/run/hostapd
@@ -80,11 +80,30 @@ wpa=2
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 wpa_psk=${WPA_PSK}
-
 EOC
+    chmod 0644 "/etc/hostapd/hostapd.conf"
+}
+
+
+
+BASEDIR=${BASEDIR:="/wifi"}
+INTERFACE=${INTERFACE:="wlan0"}
+DRIVER=${DRIVER:="nl80211"}
+SSID=${SSID:=$HOSTNAME}
+
+echo $(ls -l ${BASEDIR}/*)
+
+if [[ -f "${BASEDIR}/enabled" ]] && [[ -f "${BASEDIR}/password" ]]; then
+    CHANNEL=$(get_channel)
+    WPA_PSK=$(calculate_psk "${BASEDIR}/password")
+    if [[ -f "${BASEDIR}/guest/enabled" ]] && [[ -f "${BASEDIR}/guest/password" ]]; then
+        WPA_PSK_GUEST=$(calculate_psk "${BASEDIR}/guest/password")
+        configure_guest_wifi
+    else
+        configure_wifi
+    fi
+    exec "$@"
+    exit 0
 fi
-
-
-chmod 0644 "/etc/hostapd/hostapd.conf"
-
-exec "$@"
+echo "Wifi disabled."
+exit 0
