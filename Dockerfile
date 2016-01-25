@@ -11,4 +11,4 @@ ADD entrypoint.sh /entrypoint.sh
 RUN chmod 0755 /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["/usr/bin/hostapd", "/etc/hostapd/hostapd.conf"]
+CMD ["/usr/sbin/hostapd", "/etc/hostapd/hostapd.conf"]
