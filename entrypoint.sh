@@ -113,8 +113,6 @@ INTERFACE=${INTERFACE:="wlan0"}
 DRIVER=${DRIVER:="nl80211"}
 SSID=${SSID:=$HOSTNAME}
 
-echo $(ls -l ${BASEDIR}/*)
-
 if [[ -f "${BASEDIR}/enabled" ]] && [[ -f "${BASEDIR}/password" ]]; then
     CHANNEL=$(get_channel)
     WPA_PSK=$(calculate_psk "${BASEDIR}/password")
