@@ -106,4 +106,4 @@ if [[ -f "${BASEDIR}/enabled" ]] && [[ -f "${BASEDIR}/password" ]]; then
     exit 0
 fi
 echo "Wifi disabled."
-exit 0
+exit 1
