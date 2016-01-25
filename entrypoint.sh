@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
+function cleanup_statusfiles() {
+    rm -f "${BASEDIR}/success" \
+          "${BASEDIR}/error" \
+          "${BASEDIR}/guest/success" \
+          "${BASEDIR}/guest/error"
+}
+
 function get_channel() {
     if [[ -f "${BASEDIR}/channel" ]]; then
         echo $(cat "${BASEDIR}/channel")
@@ -20,6 +27,13 @@ function calculate_psk() {
 
 function configure_wifi() {
     echo "Configuring WIFI."
+    cleanup_statusfiles
+    for variable in DRIVER CHANNEL INTERFACE SSID WPA_PSK; do
+        if [[ -z "${!variable}" ]]; then
+            echo "Variable '${variable}' unknown, exiting now." | tee "${BASEDIR}/error"
+            return 404
+        fi
+    done
     cat << EOC > "/etc/hostapd/hostapd.conf"
 ctrl_interface=/var/run/hostapd
 driver=${DRIVER}
@@ -43,11 +57,18 @@ rsn_pairwise=CCMP
 wpa_psk=${WPA_PSK}
 EOC
     chmod 0644 "/etc/hostapd/hostapd.conf"
+    echo "Successfully configured SYSTEM WIFI at $(date +%Y-%m-%dT%H:%M:%S%:z)" | tee "${BASEDIR}/success"
 }
 
 function configure_guest_wifi() {
-    echo "Configuring guest WIFI."
-    WPA_PSK_GUEST=$([[ -f "${BASEDIR}/guest/password" ]] && /usr/bin/wpa_passphrase "${SSID}" "$(cat ${BASEDIR}/guest/password)" | awk -F "=" '/[ \t]+psk=/ { print $2 }')
+    echo "Configuring SYSTEM and GUEST WIFI."
+    cleanup_statusfiles
+    for variable in DRIVER CHANNEL INTERFACE SSID WPA_PSK WPA_PSK_GUEST; do
+        if [[ -z "${!variable}" ]]; then
+            echo "Variable '${variable}' unknown, exiting now." | tee "${BASEDIR}/error" "${BASEDIR}/guest/error"
+            return 404
+        fi
+    done
     cat << EOC > "/etc/hostapd/hostapd.conf"
 ctrl_interface=/var/run/hostapd
 driver=${DRIVER}
@@ -82,6 +103,7 @@ rsn_pairwise=CCMP
 wpa_psk=${WPA_PSK}
 EOC
     chmod 0644 "/etc/hostapd/hostapd.conf"
+    echo "Successfully configured SYSTEM WIFI at $(date +%Y-%m-%dT%H:%M:%S%:z)" | tee "${BASEDIR}/success" "${BASEDIR}/guest/success"
 }
 
 
