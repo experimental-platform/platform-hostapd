@@ -25,6 +25,12 @@ function calculate_psk() {
     return 23
 }
 
+function find_wireless_interface() {
+    # find, parse and extract the first interface name beginning with "wl". Example input:
+    # "2: wlp2s0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT group default qlen 1000"
+    echo $(ip link show | awk '/^[0-9: \t]+wl[0-9a-z]+:/ {gsub(":", "", $2); print $2}' | head -1)
+}
+
 function configure_wifi() {
     echo "Configuring WIFI."
     cleanup_statusfiles
@@ -109,7 +115,7 @@ EOC
 
 
 BASEDIR=${BASEDIR:="/wifi"}
-INTERFACE=${INTERFACE:="wlan0"}
+INTERFACE=${INTERFACE:=$(find_wireless_interface)}
 DRIVER=${DRIVER:="nl80211"}
 SSID=${SSID:=$HOSTNAME}
 
