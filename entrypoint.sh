@@ -109,7 +109,7 @@ rsn_pairwise=CCMP
 wpa_psk=${WPA_PSK}
 EOC
     chmod 0644 "/etc/hostapd/hostapd.conf"
-    echo "Successfully configured SYSTEM WIFI at $(date +%Y-%m-%dT%H:%M:%S%:z)" | tee "${BASEDIR}/success" "${BASEDIR}/guest/success"
+    echo "Successfully configured SYSTEM and GUEST WIFI at $(date +%Y-%m-%dT%H:%M:%S%:z)" | tee "${BASEDIR}/success" "${BASEDIR}/guest/success"
 }
 
 
