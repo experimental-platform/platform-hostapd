@@ -49,6 +49,14 @@ class TestWifi < Minitest::Test
     set_hostname
   end
 
+  def with_channel(channel)
+    old_channel = Wifi::Hostapd::DEFAULT_OPTIONS[:channel]
+    Wifi::Hostapd::DEFAULT_OPTIONS[:channel] = channel
+    yield channel
+  ensure
+    Wifi::Hostapd::DEFAULT_OPTIONS[:channel] = old_channel
+  end
+
   def public_disabled
     path = File.join ETC, %w[ protonet system wifi guest enabled ]
     File.unlink path
@@ -73,16 +81,10 @@ class TestWifi < Minitest::Test
   end
 
   def test_channel_is_configured
-    channel = rand 16
-
-    old_channel = Wifi::Hostapd::DEFAULT_OPTIONS[:channel]
-    Wifi::Hostapd::DEFAULT_OPTIONS[:channel] = channel
-
-    Wifi.start
-
-    assert_includes config, "channel=#{channel}"
-  ensure
-    Wifi::Hostapd::DEFAULT_OPTIONS[:channel] = old_channel
+    with_channel rand(16) do |channel|
+      Wifi.start
+      assert_includes config, "channel=#{channel}"
+    end
   end
   
   def test_private_wpa_can_be_set
@@ -166,5 +168,20 @@ class TestWifi < Minitest::Test
     Wifi.start
     assert_includes config, "ht_capab=[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
   end
+
+  def test_ht40_is_positive_when_channel_is_smaller_than_8
+    1.upto 7 do |channel|
+      with_channel(channel) { Wifi.start }
+      assert_includes config, "ht_capab=[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
+    end
+  end
+
+  def test_ht40_is_negative_when_channel_is_greater_than_7
+    8.upto 15 do |channel|
+      with_channel(channel) { Wifi.start }
+      assert_includes config, "ht_capab=[HT20][HT40-][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
+    end
+  end
+  
 
 end

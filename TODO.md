@@ -9,7 +9,6 @@
 - STATIC `country_code` should be set to US
 - STATIC `wme_enabled` should be 1
 - STATIC `wmm_enabled` should be 1
-- DYNAMIC `htcapab` HT40 should be positive when channel < 9, otherwise negative
 
 - per section (private, public):
   - STATIC `mad_addr_acl` should be 0
