@@ -7,8 +7,9 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ADD entrypoint.sh /entrypoint.sh
-RUN chmod 0755 /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+ADD lib/wifi.rb /lib/wifi.rb
+ADD bin/wifi /bin/wifi
+RUN chmod 0755 /bin/wifi
+ENTRYPOINT ["/bin/wifi"]
 
 CMD ["/usr/sbin/hostapd", "/etc/hostapd/hostapd.conf"]

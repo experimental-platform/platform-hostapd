@@ -4,39 +4,148 @@ require 'ipaddr'
 require 'pathname'
 require 'timeout'
 
-
-class IPAddr
-  def netmask
-    _to_string(@mask_addr)
-  end
-
-  def succ_net
-    to_range.last.succ
-  end
-
-  def prefixlen
-    @mask_addr.to_s(2).count('1')
-  end
-
-  def to_cidr
-    "#{to_s}/#{prefixlen}"
-  end
-end
-
+require 'logger'
 
 module Wifi
+
+  module Logging
+    extend Forwardable
+
+    @@logger = Logger.new(STDOUT)
+
+    def self.logger=(logger)
+      @@logger = logger
+    end
+
+    def_delegators :logger, :debug, :info, :warn, :error, :fatal, :unknown
+
+    def log(msg)
+      logger.log
+    end
+
+    def logger
+      @@logger
+    end
+
+
+    def level
+      logger.instance_variable_get(:@level)
+    end
+
+    def level=(level=Logger::ERROR) # DEBUG=0, INFO=1, WARN=2, ERROR=3, FATAL=4, UNKNOWN=5
+      logger.instance_variable_set(:@level, level)
+    end
+  end
+
+  module Console
+    include Logging
+
+    def run(cmd)
+      if level == Logger::DEBUG
+        debug "run: #{cmd}"
+      end
+      system "#{cmd} >/dev/null 2>&1"
+    end
+  end
+
+  class IPAddr
+    def netmask
+      _to_string(@mask_addr)
+    end
+
+    def succ_net
+      to_range.last.succ
+    end
+
+    def prefixlen
+      @mask_addr.to_s(2).count('1')
+    end
+
+    def to_cidr
+      "#{to_s}/#{prefixlen}"
+    end
+  end
+
+  class Config
+  end
+  class Network
+  end
+  class Hostapd
+  end
+
   class << self
     include Logging
 
     attr_accessor :config_path
 
+    class Config < Wifi::Config
+
+      def fetch(key, default)
+        super
+      end
+
+      def read(name)
+        path = config_path.join(name.to_s.downcase)
+        File.read path if File.readable? path
+      end
+
+    end
+
+    class Network < Wifi::Network
+
+      Job = Struct.new :to_s, :start, :stop
+
+      def dnsmasq
+        Job.new
+      end
+      def interface
+        Job.new 'wlp2s0'
+      end
+
+      def hostname
+        `hostname -s`.chomp!
+      end
+
+      def ssid
+        name == 'private' ? hostname : "#{ hostname } (public)"
+      end
+
+      def password
+        # TODO read password from file
+        name == 'private' ? 'secretprivate' : 'secretpublic'
+      end
+
+      def enabled?
+        true
+      end
+
+    end
+
+    class Hostapd < Wifi::Hostapd
+      def ieee80211n
+        false
+      end
+    end
+
     def networks
       debug "fetching networks"
-      available_config = config.scope("available")
-      @networks ||= Dir[File.join(config_path, 'available', '*')].map do |path|
-        name = File.basename(path)
-        Network.new name, available_config.scope(name), config_path: config_path
+
+      @networks = []
+
+      private_network_path = File.join config_path
+      public_network_path  = File.join config_path, 'guest'
+
+      if File.exists? File.join(private_network_path, 'enabled')
+        config = Config.new private_network_path
+        @networks << Network.new('private', config, config_path: config_path)
       end
+
+      if File.exists? File.join(public_network_path, 'enabled')
+        config = Config.new public_network_path
+        @networks << Network.new('public', config, config_path: config_path)
+      end
+
+      @networks
     end
 
     def enabled_networks
@@ -56,8 +165,8 @@ module Wifi
       info "found wifis: #{enabled_networks.map(&:name)}"
       if enabled_networks.any?
         hostapd.configure enabled_networks
-        hostapd.start
-        enabled_networks.each(&:start)
+        # hostapd.start
+        # enabled_networks.each(&:start)
       end
     end
 
@@ -80,8 +189,14 @@ module Wifi
       enabled_networks.map { |net| net.interface(false) }.include? interface
     end
 
+    def read_hostname
+      hostname = `hostname -s`.strip
+      raise 'Hostname could not be read' unless $?.zero?
+
+      hostname
+    end
     def nodename
-      @nodename ||= File.read("/etc/protonet/nodename").strip rescue nil || "my.protonet.info"
+      @nodename ||= read_hostname
     end
 
     def config
@@ -89,124 +204,15 @@ module Wifi
     end
 
     def config_path
-      @config_path ||= '/etc/protonet/wifi'
+      @config_path ||= '/etc/protonet/system/wifi'
     end
 
     def version
-      puts "Wifi (version: #{VERSION})"
+      info "Wifi (version: #{VERSION})"
     end
   end
 
   VERSION = "1.1.5"
-
-  class Service
-    include Console
-    include Logging
-
-    attr_reader :name, :options
-
-    def initialize(name, options={})
-      @name = name
-      @options = {
-        runsv_path: '/home/protonet/dashboard/shared/services/enabled',
-        log_path: '/home/protonet/dashboard/shared/log/services/',
-        services_path: "/etc/sv/%{name}",
-        service_start: "sv start %{path}",
-        service_stop: "sv stop %{path}",
-        service_status: "sv status %{path}",
-
-      }.merge options
-    end
-
-    def build(cmd)
-      service_path.mkpath unless service_path.exist?
-      supervise_path.mkpath unless supervise_path.exist?
-
-      run = <<-END.gsub(/^ */, '')
-        #!/bin/bash -e
-        exec 2>&1
-        source /home/protonet/dashboard/current/services/common.sh
-        #{cmd}
-      END
-      run_path.open('w', 0755) do |file|
-        file.write(run)
-      end
-
-      service_log_path.mkpath unless service_log_path.exist?
-
-      log_cmd = <<-END.gsub(/^ */, '')
-        #!/bin/bash -e
-        source /home/protonet/dashboard/current/services/common.sh
-        mkdir -p #{log_path}
-        exec svlogd -tt #{log_path}
-      END
-
-      service_log_run_path.open('w', 0755) do |file|
-        file.write(log_cmd)
-      end
-    end
-
-    def service_path
-      Pathname.new(options[:services_path] % {name: name})
-    end
-
-    def supervise_path
-      service_path.join('supervise')
-    end
-
-    def run_path
-      service_path.join('run')
-    end
-
-    def service_log_path
-      service_path.join('log')
-    end
-
-    def service_log_run_path
-      service_log_path.join('run')
-    end
-
-    def start
-      link
-      debug "service start #{name}"
-      run(options[:service_start] % {path: runsv_link})
-    end
-
-    def stop
-      debug "service stop #{name}"
-      run(options[:service_stop] % {path: runsv_link})
-      unlink
-    end
-
-    def runs?
-      not `#{options[:service_status] % {path: runsv_link} }`.include?("down:")
-    end
-
-    def restart
-      stop if runs?
-      start
-    end
-
-    def link
-      runsv_link.make_symlink(service_path) unless runsv_link.exist?
-    end
-
-    def unlink
-      runsv_link.delete if runsv_link.exist?
-    end
-
-    def runsv_path
-      Pathname.new(options[:runsv_path])
-    end
-
-    def runsv_link
-      runsv_path.join(name)
-    end
-
-    def log_path
-      Pathname.new(options[:log_path]).join(name)
-    end
-  end
 
   class Interface
     include Console
@@ -219,7 +225,7 @@ module Wifi
       @network = network
       @name = name
       @options = {
-        test_interface: '/sbin/ifconfig %{interface}',
+        test_interface: 'ip link show %{interface}',
         config_interface: '/sbin/ifconfig %{interface} %{ip} netmask %{netmask}',
         external_interface: 'br0'
       }.merge options
@@ -295,7 +301,8 @@ module Wifi
       wme_enabled: '1',
       wmm_enabled: '1',
       channel: (File.read("/etc/protonet/wifi/channel").strip rescue '1'),
-      interface_name: 'wlan0'
+      # interface_name: 'wlan0'
+      interface_name: 'wlp2s0'
     }
 
     # default accessor
@@ -307,17 +314,6 @@ module Wifi
 
     def initialize(options={})
       @options = DEFAULT_OPTIONS.merge options
-    end
-
-    def start
-      debug "hostapd start"
-      raise "unconfigured hostapd" unless configured?
-      service.build(service_cmd)
-      service.restart
-    end
-
-    def stop
-      service.stop
     end
 
     def configure(networks)
@@ -404,16 +400,9 @@ module Wifi
       !!`/sbin/iwconfig '#{options[:interface_name]}'`.match(/\s+IEEE\s+802\.11\w*?#{standard}/) ? "1" : "0"
     end
 
-    def service
-      @service ||= Service.new(service_name)
-    end
-
-    def service_cmd
-      options[:service_exec] % {config_path: config_path}
-    end
-
     def mac_address
-      if match = `ifconfig #{interface_name}`.match(/#{interface_name}.*?(([A-F0-9]{2}:){5}[A-F0-9]{2})/im)
+      if match = `ip addr show #{interface_name}`.match(/link\/ether.*?(([A-F0-9]{2}:){5}[A-F0-9]{2})/im)
+        # if match = `ifconfig #{interface_name}`.match(/#{interface_name}.*?(([A-F0-9]{2}:){5}[A-F0-9]{2})/im)
         match[1]
       else
         "00:00:B0:0B:00:00"
@@ -528,7 +517,7 @@ module Wifi
     def passphrase
       if password
         debug "network(#{name}) build passphare (wpa_psk)"
-        `/usr/bin/wpa_passphrase '#{ssid}' '#{password}'`.match(/\tpsk=(.*)$/)[1].strip rescue nil
+        `wpa_passphrase '#{ssid}' '#{password}'`.match(/\tpsk=(.*)$/)[1].strip rescue nil
       end
     end
 
@@ -705,7 +694,7 @@ except-interface=lo
     class HardwareCapability
       DEFAULT_OPTIONS = {
         interface: 'phy0',
-        iw_info: '/usr/bin/iw %{interface} info',
+        iw_info: 'iw %{interface} info',
         iw_capabilities_match: /band 1\:[\S\s]+?capabilities\:(?<capabilities>[\S\s]+?)frequencies\:/i,
         channel: "1"
       }
@@ -748,11 +737,11 @@ except-interface=lo
       end
 
       def iw_capabilities
-        @iw_capabilities ||= iw_info.match(options[:iw_capabilities_match])[:capabilities] rescue ""
+        @iw_capabilities ||= iw_info.match(options[:iw_capabilities_match])[:capabilities] #rescue ""
       end
 
       def iw_info
-        `#{options[:iw_info] % {interface: interface}}`.to_s
+        `#{options[:iw_info] % {interface: interface} }`.to_s
       end
 
       def channel_width_set
