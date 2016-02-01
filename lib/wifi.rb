@@ -123,7 +123,7 @@ module Wifi
 
     class Hostapd < Wifi::Hostapd
       def ieee80211n
-        false
+        0
       end
     end
 
