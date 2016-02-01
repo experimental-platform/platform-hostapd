@@ -3,4 +3,7 @@
 # Separated executable code so we can test more easily.
 
 require File.expand_path('../../lib/wifi', __FILE__)
+
 Wifi.start
+
+exec ARGV
