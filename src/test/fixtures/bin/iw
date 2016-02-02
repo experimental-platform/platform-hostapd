@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+if [[ ${MOCK_IW_80211N} == "FALSE" ]]; then
+    cat "$(dirname $0)/iw-info-false.out"
+else
+    cat "$(dirname $0)/iw-info-true.out"
+fi

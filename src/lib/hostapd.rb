@@ -1,3 +1,4 @@
+require "hostapd/version"
 require 'fileutils'
 require 'forwardable'
 require 'ipaddr'
@@ -98,8 +99,10 @@ module Wifi
       def dnsmasq
         Job.new
       end
+
       def interface
-        Job.new 'wlp2s0'
+        interface_name = `ip addr show`.match(/^[0-9: \t]+(wl[0-9a-z]+):/)[1]
+        Job.new interface_name
       end
 
       def hostname
@@ -122,9 +125,6 @@ module Wifi
     end
 
     class Hostapd < Wifi::Hostapd
-      def ieee80211n
-        0
-      end
     end
 
     def networks
@@ -133,7 +133,7 @@ module Wifi
       @networks = []
 
       private_network_path = File.join config_path
-      public_network_path  = File.join config_path, 'guest'
+      public_network_path = File.join config_path, 'guest'
 
       if File.exists? File.join(private_network_path, 'enabled')
         config = Config.new private_network_path
@@ -195,6 +195,7 @@ module Wifi
 
       hostname
     end
+
     def nodename
       @nodename ||= read_hostname
     end
@@ -297,6 +298,7 @@ module Wifi
       driver: 'nl80211',
       hw_mode: 'g',
       ieee80211d: '1',
+      ieee80211h: 0, # TODO: enable RADAR detection?
       country_code: 'US',
       wme_enabled: '1',
       wmm_enabled: '1',
@@ -327,6 +329,7 @@ module Wifi
         hw_mode=#{hw_mode}
         ieee80211n=#{ieee80211n}
         ieee80211d=#{ieee80211d}
+        ieee80211h=#{ieee80211h}
         country_code=#{country_code}
         wme_enabled=#{wme_enabled}
         wmm_enabled=#{wmm_enabled}
@@ -396,8 +399,7 @@ module Wifi
     end
 
     def ieee80211n
-      standard = 'n'
-      !!`/sbin/iwconfig '#{options[:interface_name]}'`.match(/\s+IEEE\s+802\.11\w*?#{standard}/) ? "1" : "0"
+      !!`iw phy phy0 info`.match(/HT[248]{1}0/im) ? "1" : "0"
     end
 
     def mac_address

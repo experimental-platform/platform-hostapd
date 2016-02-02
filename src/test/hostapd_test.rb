@@ -1,15 +1,13 @@
-require 'minitest/autorun'
-require "minitest/reporters"
+require 'test_helper'
 
 ROOT = File.expand_path '..', __FILE__
 ENV['PATH'] = "#{ File.join ROOT, 'fixtures', 'bin' }:#{ ENV['PATH'] }"
 
-Minitest::Reporters.use!
 
-require 'wifi'
-Wifi::Logging.logger = Logger.new File.join(ROOT, 'test.log');
+Wifi::Logging.logger = Logger.new File.join(ROOT, 'test.log')
 
-class TestWifi < Minitest::Test
+# noinspection RubyInstanceMethodNamingConvention
+class HostapdTest < Minitest::Test
 
   ETC = File.join ROOT, 'fixtures', 'etc'
   attr_reader :config_path, :hostapd_config_path
@@ -36,6 +34,7 @@ class TestWifi < Minitest::Test
     Wifi.instance_variable_set :@nodename, hostname
     @hostname = hostname
   end
+
   alias_method :reset_hostname, :set_hostname
 
   def hostname
@@ -75,6 +74,10 @@ class TestWifi < Minitest::Test
     File.open(path, File::CREAT|File::RDWR) { |f| f << 'true' }
   end
 
+  def test_that_it_has_a_version_number
+    refute_nil ::Hostapd::VERSION
+  end
+
   def test_start_generates_config_and_starts_hostapd
     Wifi.start
     config
@@ -86,7 +89,7 @@ class TestWifi < Minitest::Test
       assert_includes config, "channel=#{channel}"
     end
   end
-  
+
   def test_private_wpa_can_be_set
     password = 'secretprivate'
     psk = '5eb4f89bf08336deffb335fd755875795ea581df4ca2ea7265bfa9d57420c504'
@@ -121,6 +124,18 @@ class TestWifi < Minitest::Test
     assert_includes config, "bssid=02:0e:8e:64:2a:01"
   end
 
+  def test_ctrl_interfaces_points_to_socket
+    # Ubuntu always uses '/var/run/hostapd'
+    Wifi.start
+    assert_includes config, "ctrl_interface=/var/run/hostapd"
+  end
+
+  def test_country_code_is_us
+    # Apparently we're not allowed to change that.
+    Wifi.start
+    assert_includes config, "country_code=US"
+  end
+
   def test_bssid_is_not_set_when_less_than_two_networks_are_enabled
     public_disabled { Wifi.start }
     line = config.grep(/^bssid/).first
@@ -140,7 +155,7 @@ class TestWifi < Minitest::Test
   end
 
   def test_driver_can_be_configured
-    driver = 'testdriver'
+    driver = 'nl80211'
     old_driver = Wifi::Hostapd::DEFAULT_OPTIONS[:driver]
     Wifi::Hostapd::DEFAULT_OPTIONS[:driver] = driver
 
@@ -169,6 +184,57 @@ class TestWifi < Minitest::Test
     assert_includes config, "ht_capab=[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
   end
 
+  def test_ieee80211n_set_true_from_iw_info
+    # see fixtures/bin/iw-info-true.out
+    ENV['MOCK_IW_80211N'] = "TRUE"
+    Wifi.start
+    assert_includes config, "ieee80211n=1"
+  end
+
+  def test_ieee80211n_set_false_from_iw_info
+    ENV['MOCK_IW_80211N'] = "FALSE"
+    # see fixtures/bin/iw-info-false.out
+    Wifi.start
+    assert_includes config, "ieee80211n=0"
+  ensure
+    ENV.delete('MOCK_IW_80211N')
+  end
+
+  def test_wmm_enabled_set_true
+    # this is just the default switch, advanced config
+    # depends on hardware features
+    Wifi.start
+    assert_includes config, "wmm_enabled=1"
+  end
+
+  def test_wme_enabled_set_true
+    # no idea what this does, maybe disable it?
+    Wifi.start
+    assert_includes config, "wmm_enabled=1"
+  end
+
+
+  def test_hwmode_set_to_g
+    # we can use #11b, 11g, and 11a respectively:
+    # b is slow, a is 5GHz only and g the only sane solution
+    # (ng and na are no valid options, see https://dev.openwrt.org/ticket/17541)
+    Wifi.start
+    assert_includes config, "hw_mode=g"
+  end
+
+  def test_ieee80211d_set_true
+    # must be enabled to a) announce power and channel settings and
+    # b) to enable ieee80211d (RADAR detection and DFS support)
+    Wifi.start
+    assert_includes config, "ieee80211d=1"
+  end
+
+  def test_ieee80211h_set_true
+    # enables RADAR detection and DFS support
+    Wifi.start
+    assert_includes config, "ieee80211h=0"
+  end
+
   def test_ht40_is_positive_when_channel_is_smaller_than_8
     1.upto 7 do |channel|
       with_channel(channel) { Wifi.start }
@@ -182,6 +248,49 @@ class TestWifi < Minitest::Test
       assert_includes config, "ht_capab=[HT20][HT40-][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
     end
   end
-  
+
+  ["private", "public"].each do |section|
+    define_method("test_#{section}_macaddr_acl_is_0") do
+      self.method("#{section}_disabled").call { Wifi.start }
+      assert_includes config, 'macaddr_acl=0'
+    end
+
+    define_method("test_#{section}_auth_algs_is_1") do
+      self.method("#{section}_disabled").call { Wifi.start }
+      assert_includes config, 'auth_algs=1'
+    end
+
+    define_method("test_#{section}_ignore_broadcast_ssid_is_0") do
+      self.method("#{section}_disabled").call { Wifi.start }
+      assert_includes config, 'ignore_broadcast_ssid=0'
+    end
+
+    define_method("test_#{section}_wpa_2") do
+      self.method("#{section}_disabled").call { Wifi.start }
+      assert_includes config, 'wpa=2'
+    end
+
+    define_method("test_#{section}_wpa_key_mgmt_is_WPA-PSK") do
+      self.method("#{section}_disabled").call { Wifi.start }
+      assert_includes config, 'wpa_key_mgmt=WPA-PSK'
+    end
+
+    define_method("test_#{section}_rsn_pairwise_is_CCMP") do
+      self.method("#{section}_disabled").call { Wifi.start }
+      assert_includes config, 'rsn_pairwise=CCMP'
+    end
+
+  end
+
+  def test_bss_is_not_set_when_less_than_two_networks_are_enabled
+    public_disabled { Wifi.start }
+    line = config.grep(/^bss=/).first
+    assert_nil line
+  end
+
+  def test_bss_is_set_when_two_networks_are_enabled
+    Wifi.start
+    assert_includes config, 'bss=wlp2s0'
+  end
 
 end

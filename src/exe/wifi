@@ -2,8 +2,8 @@
 
 # Separated executable code so we can test more easily.
 
-require File.expand_path('../../lib/wifi', __FILE__)
+require "hostapd"
 
 Wifi.start
 
-exec ARGV
+system ARGV.join(' ')
