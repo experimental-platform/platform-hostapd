@@ -290,6 +290,8 @@ module Wifi
 
     attr_reader :options
 
+    @@channel_path = '/etc/protonet/wifi/channel'
+
     DEFAULT_OPTIONS = {
       config_path: '/etc/hostapd/hostapd.conf',
       service_name: 'hostapd',
@@ -302,7 +304,6 @@ module Wifi
       country_code: 'US',
       wme_enabled: '1',
       wmm_enabled: '1',
-      channel: (File.read("/etc/protonet/wifi/channel").strip rescue '1'),
       # interface_name: 'wlan0'
       interface_name: 'wlp2s0'
     }
@@ -316,6 +317,10 @@ module Wifi
 
     def initialize(options={})
       @options = DEFAULT_OPTIONS.merge options
+    end
+
+    def channel
+      File.read(@@channel_path).strip rescue '1'
     end
 
     def configure(networks)

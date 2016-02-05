@@ -17,6 +17,8 @@ class HostapdTest < Minitest::Test
   def setup
     @config_path = File.join ETC, %w[ protonet system wifi ]
     Wifi.config_path = config_path
+    @channel_path = File.join ETC, %w[ protonet system wifi channel ]
+    Wifi::Hostapd.class_variable_set :@@channel_path, @channel_path
     @hostapd_config_path = File.join ETC, 'hostapd', 'hostapd.conf'
     Wifi::Hostapd::DEFAULT_OPTIONS[:config_path] = hostapd_config_path
     File.unlink @hostapd_config_path if File.exists? @hostapd_config_path
@@ -50,10 +52,14 @@ class HostapdTest < Minitest::Test
 
   def with_channel(channel)
     old_channel = Wifi::Hostapd::DEFAULT_OPTIONS[:channel]
-    Wifi::Hostapd::DEFAULT_OPTIONS[:channel] = channel
+    File.open(@channel_path, 'w') do |file|
+      file.write(channel)
+    end rescue nil
+    # Wifi::Hostapd::DEFAULT_OPTIONS[:channel] = channel
     yield channel
   ensure
     Wifi::Hostapd::DEFAULT_OPTIONS[:channel] = old_channel
+    File.unlink @channel_path
   end
 
   def public_disabled
