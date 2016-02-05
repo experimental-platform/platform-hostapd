@@ -251,32 +251,32 @@ class HostapdTest < Minitest::Test
 
   %w(private public).each do |section|
     define_method("test_#{section}_macaddr_acl_is_0") do
-      self.method("#{section}_disabled").call { Wifi.start }
+      send("#{section}_disabled") { Wifi.start }
       assert_includes config, 'macaddr_acl=0'
     end
 
     define_method("test_#{section}_auth_algs_is_1") do
-      self.method("#{section}_disabled").call { Wifi.start }
+      send("#{section}_disabled") { Wifi.start }
       assert_includes config, 'auth_algs=1'
     end
 
     define_method("test_#{section}_ignore_broadcast_ssid_is_0") do
-      self.method("#{section}_disabled").call { Wifi.start }
+      send("#{section}_disabled") { Wifi.start }
       assert_includes config, 'ignore_broadcast_ssid=0'
     end
 
     define_method("test_#{section}_wpa_2") do
-      self.method("#{section}_disabled").call { Wifi.start }
+      send("#{section}_disabled") { Wifi.start }
       assert_includes config, 'wpa=2'
     end
 
     define_method("test_#{section}_wpa_key_mgmt_is_WPA-PSK") do
-      self.method("#{section}_disabled").call { Wifi.start }
+      send("#{section}_disabled") { Wifi.start }
       assert_includes config, 'wpa_key_mgmt=WPA-PSK'
     end
 
     define_method("test_#{section}_rsn_pairwise_is_CCMP") do
-      self.method("#{section}_disabled").call { Wifi.start }
+      send("#{section}_disabled") { Wifi.start }
       assert_includes config, 'rsn_pairwise=CCMP'
     end
 
