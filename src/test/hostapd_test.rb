@@ -6,7 +6,7 @@ ENV['PATH'] = "#{ File.join ROOT, 'fixtures', 'bin' }:#{ ENV['PATH'] }"
 
 Wifi::Logging.logger = Logger.new File.join(ROOT, 'test.log')
 
-# noinspection RubyInstanceMethodNamingConvention
+# noinspection RubyInstanceMethodNamingConvention,SpellCheckingInspection
 class HostapdTest < Minitest::Test
 
   ETC = File.join ROOT, 'fixtures', 'etc'
@@ -91,7 +91,7 @@ class HostapdTest < Minitest::Test
   end
 
   def test_private_wpa_can_be_set
-    password = 'secretprivate'
+    # password = 'secretprivate'
     psk = '5eb4f89bf08336deffb335fd755875795ea581df4ca2ea7265bfa9d57420c504'
 
     with_hostname('pfannkuchenpfanne') { Wifi.start }
@@ -100,7 +100,7 @@ class HostapdTest < Minitest::Test
   end
 
   def test_public_wpa_can_be_set
-    password = 'secretpublic'
+    # password = 'secretpublic'
     psk = 'f3774c9dca0a46f1c11b7991e09673aafb4b1d3de5b818a9118c7fae1840aa30'
 
     with_hostname('pfannkuchenpfanne') { Wifi.start }
@@ -121,19 +121,19 @@ class HostapdTest < Minitest::Test
   def test_bssid_is_set_when_public_and_private_are_enabled
     # see fixtures/bin/ip-addr-show.out
     Wifi.start
-    assert_includes config, "bssid=02:0e:8e:64:2a:01"
+    assert_includes config, 'bssid=02:0e:8e:64:2a:01'
   end
 
   def test_ctrl_interfaces_points_to_socket
     # Ubuntu always uses '/var/run/hostapd'
     Wifi.start
-    assert_includes config, "ctrl_interface=/var/run/hostapd"
+    assert_includes config, 'ctrl_interface=/var/run/hostapd'
   end
 
   def test_country_code_is_us
     # Apparently we're not allowed to change that.
     Wifi.start
-    assert_includes config, "country_code=US"
+    assert_includes config, 'country_code=US'
   end
 
   def test_bssid_is_not_set_when_less_than_two_networks_are_enabled
@@ -181,21 +181,21 @@ class HostapdTest < Minitest::Test
   def test_hw_capabilities_are_read_from_iw_info
     # see fixtures/bin/iw-info.out
     Wifi.start
-    assert_includes config, "ht_capab=[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
+    assert_includes config, 'ht_capab=[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]'
   end
 
   def test_ieee80211n_set_true_from_iw_info
     # see fixtures/bin/iw-info-true.out
-    ENV['MOCK_IW_80211N'] = "TRUE"
+    ENV['MOCK_IW_80211N'] = 'TRUE'
     Wifi.start
-    assert_includes config, "ieee80211n=1"
+    assert_includes config, 'ieee80211n=1'
   end
 
   def test_ieee80211n_set_false_from_iw_info
-    ENV['MOCK_IW_80211N'] = "FALSE"
+    ENV['MOCK_IW_80211N'] = 'FALSE'
     # see fixtures/bin/iw-info-false.out
     Wifi.start
-    assert_includes config, "ieee80211n=0"
+    assert_includes config, 'ieee80211n=0'
   ensure
     ENV.delete('MOCK_IW_80211N')
   end
@@ -204,13 +204,13 @@ class HostapdTest < Minitest::Test
     # this is just the default switch, advanced config
     # depends on hardware features
     Wifi.start
-    assert_includes config, "wmm_enabled=1"
+    assert_includes config, 'wmm_enabled=1'
   end
 
   def test_wme_enabled_set_true
     # no idea what this does, maybe disable it?
     Wifi.start
-    assert_includes config, "wmm_enabled=1"
+    assert_includes config, 'wmm_enabled=1'
   end
 
 
@@ -219,37 +219,37 @@ class HostapdTest < Minitest::Test
     # b is slow, a is 5GHz only and g the only sane solution
     # (ng and na are no valid options, see https://dev.openwrt.org/ticket/17541)
     Wifi.start
-    assert_includes config, "hw_mode=g"
+    assert_includes config, 'hw_mode=g'
   end
 
   def test_ieee80211d_set_true
     # must be enabled to a) announce power and channel settings and
     # b) to enable ieee80211d (RADAR detection and DFS support)
     Wifi.start
-    assert_includes config, "ieee80211d=1"
+    assert_includes config, 'ieee80211d=1'
   end
 
   def test_ieee80211h_set_true
     # enables RADAR detection and DFS support
     Wifi.start
-    assert_includes config, "ieee80211h=0"
+    assert_includes config, 'ieee80211h=0'
   end
 
   def test_ht40_is_positive_when_channel_is_smaller_than_8
     1.upto 7 do |channel|
       with_channel(channel) { Wifi.start }
-      assert_includes config, "ht_capab=[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
+      assert_includes config, 'ht_capab=[HT20][HT40+][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]'
     end
   end
 
   def test_ht40_is_negative_when_channel_is_greater_than_7
     8.upto 15 do |channel|
       with_channel(channel) { Wifi.start }
-      assert_includes config, "ht_capab=[HT20][HT40-][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]"
+      assert_includes config, 'ht_capab=[HT20][HT40-][SHORT-GI-20][SHORT-GI-40][DSSS_CCK-40][TX-STBC][RX-STBC1]'
     end
   end
 
-  ["private", "public"].each do |section|
+  %w(private public).each do |section|
     define_method("test_#{section}_macaddr_acl_is_0") do
       self.method("#{section}_disabled").call { Wifi.start }
       assert_includes config, 'macaddr_acl=0'
