@@ -13,7 +13,7 @@ RUN cd /src && rake test
 RUN cd /src rake build && rake install && chmod 0755 /src/exe/wifi
 
 
-ENTRYPOINT ["/src/bin/wifi"]
+ENTRYPOINT ["/src/exe/wifi"]
 
 CMD ["/usr/sbin/hostapd", "/etc/hostapd/hostapd.conf"]
 
