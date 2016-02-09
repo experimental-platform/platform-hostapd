@@ -22,6 +22,26 @@ class HostapdTest < Minitest::Test
     @hostapd_config_path = File.join ETC, 'hostapd', 'hostapd.conf'
     Wifi::Hostapd::DEFAULT_OPTIONS[:config_path] = hostapd_config_path
     File.unlink @hostapd_config_path if File.exists? @hostapd_config_path
+    #
+    # Create password files
+    #
+    @password = 'blafaselblup'
+    @guest_password = 'pulblesafalb'
+    @psk = '5b0b62a8ad7bbe32330a0a71bcbaf6671241cf59d94ce31bfbe5f33848cedc78'
+    @guest_psk = '6b407dac77cbcbba55ce2a6876a5a2f9f29c28472914780d6e21326324670804'
+    @pass_file = File.join @config_path, 'password'
+    File.open(@pass_file, 'w') do |file|
+      file.write(@password)
+    end
+    @guest_pass_file = File.join @config_path, 'guest', 'password'
+    File.open(@guest_pass_file, 'w') do |file|
+      file.write(@guest_password)
+    end
+  end
+
+  def teardown
+    File.unlink @pass_file
+    File.unlink @guest_pass_file
   end
 
   def config
@@ -61,16 +81,6 @@ class HostapdTest < Minitest::Test
     File.unlink @channel_path
   end
 
-  def with_password(password)
-    pass_file = File.join @config_path, 'password'
-    File.open(pass_file, 'w') do |file|
-      file.write(password)
-    end rescue nil
-    yield password
-  ensure
-    File.unlink pass_file
-  end
-
   def public_disabled
     path = File.join ETC, %w[ protonet system wifi guest enabled ]
     File.unlink path
@@ -106,21 +116,14 @@ class HostapdTest < Minitest::Test
   end
 
   def test_private_wpa_can_be_set
-    password = 'blafaselblup'
-    psk = '5b0b62a8ad7bbe32330a0a71bcbaf6671241cf59d94ce31bfbe5f33848cedc78'
-    with_password(password) {
-      with_hostname('pfannkuchenpfanne') { Wifi.start }
-    }
-    assert_includes config, "wpa_psk=#{psk}"
+    with_hostname('pfannkuchenpfanne') { Wifi.start }
+    assert_includes config, "wpa_psk=#{@psk}"
+    assert_includes config, "wpa_psk=5b0b62a8ad7bbe32330a0a71bcbaf6671241cf59d94ce31bfbe5f33848cedc78"
   end
 
   def test_public_wpa_can_be_set
-    password = 'pulblesafalb'
-    psk = '6b407dac77cbcbba55ce2a6876a5a2f9f29c28472914780d6e21326324670804'
-    with_password(password) {
-      with_hostname('pfannkuchenpfanne') { Wifi.start }
-    }
-    assert_includes config, "wpa_psk=#{psk}"
+    with_hostname('pfannkuchenpfanne') { Wifi.start }
+    assert_includes config, "wpa_psk=#{@guest_psk}"
   end
 
   def test_private_ssid_is_taken_from_hostname
