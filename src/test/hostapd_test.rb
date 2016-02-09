@@ -25,10 +25,14 @@ class HostapdTest < Minitest::Test
     #
     # Create password files
     #
-    @password = 'blafaselblup'
-    @guest_password = 'pulblesafalb'
-    @psk = '5b0b62a8ad7bbe32330a0a71bcbaf6671241cf59d94ce31bfbe5f33848cedc78'
-    @guest_psk = '6b407dac77cbcbba55ce2a6876a5a2f9f29c28472914780d6e21326324670804'
+    @password = SecureRandom.hex(32)
+    @guest_password = SecureRandom.hex(32)
+    private_ssid = Wifi.networks.find {|net| net.name == 'private' }.ssid
+    public_ssid = Wifi.networks.find {|net| net.name == 'public' }.ssid
+
+    @psk = Wifi.wpa_passphrase private_ssid, @password
+    @guest_psk = Wifi.wpa_passphrase public_ssid, @guest_password
+
     @pass_file = File.join @config_path, 'password'
     File.open(@pass_file, 'w') do |file|
       file.write(@password)
@@ -37,11 +41,6 @@ class HostapdTest < Minitest::Test
     File.open(@guest_pass_file, 'w') do |file|
       file.write(@guest_password)
     end
-  end
-
-  def teardown
-    File.unlink @pass_file
-    File.unlink @guest_pass_file
   end
 
   def config
@@ -99,6 +98,16 @@ class HostapdTest < Minitest::Test
     File.open(path, File::CREAT|File::RDWR) { |f| f << 'true' }
   end
 
+  def test_wpa_passphrase_generation
+    expected_passphrase = '6eac3f4e4de871db3611956ca772ea5cb5a76390acd2593be94048954bcab73a'
+    assert_equal expected_passphrase, Wifi.wpa_passphrase('lolwat', 'thisismypwd')
+
+    assert_nil Wifi.wpa_passphrase(' ', 'thisismypwd')
+    assert_nil Wifi.wpa_passphrase(nil, 'thisismypwd')
+    assert_nil Wifi.wpa_passphrase('amazing', ' ')
+    assert_nil Wifi.wpa_passphrase('amazing', nil)
+  end
+
   def test_that_it_has_a_version_number
     refute_nil ::Hostapd::VERSION
   end
@@ -118,7 +127,6 @@ class HostapdTest < Minitest::Test
   def test_private_wpa_can_be_set
     with_hostname('pfannkuchenpfanne') { Wifi.start }
     assert_includes config, "wpa_psk=#{@psk}"
-    assert_includes config, "wpa_psk=5b0b62a8ad7bbe32330a0a71bcbaf6671241cf59d94ce31bfbe5f33848cedc78"
   end
 
   def test_public_wpa_can_be_set

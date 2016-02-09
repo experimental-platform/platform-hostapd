@@ -4,10 +4,16 @@ require 'forwardable'
 require 'ipaddr'
 require 'pathname'
 require 'timeout'
-
+require 'openssl'
 require 'logger'
 
 module Wifi
+
+  def self.wpa_passphrase(ssid, passphrase)
+    if [ssid, passphrase].all? {|value| value.to_s.strip.length > 0 }
+      OpenSSL::PKCS5.pbkdf2_hmac_sha1(passphrase, ssid, 4096, 32).unpack("H*").first
+    end
+  end
 
   module Logging
     extend Forwardable
@@ -90,6 +96,9 @@ module Wifi
         File.read path if File.readable? path
       end
 
+      def password
+        read :password
+      end
     end
 
     class Network < Wifi::Network
@@ -114,17 +123,13 @@ module Wifi
       end
 
       def password
-        # TODO read password from file
-        name == 'private' ? 'secretprivate' : 'secretpublic'
+        config.password
       end
 
       def enabled?
         true
       end
 
-    end
-
-    class Hostapd < Wifi::Hostapd
     end
 
     def networks
@@ -351,8 +356,8 @@ module Wifi
 
       ssids_config = []
 
-      first_ssid = "ssid=#{first_network.ssid}" << $/
-      if passphrase = first_network.passphrase
+      first_ssid = "ssid=#{first_network.ssid}\n"
+      if passphrase = first_network.password
         first_ssid << <<-END_PASSPHRASE.gsub(/^ */, '')
           macaddr_acl=#{first_network.macaddr_acl}
           auth_algs=#{first_network.auth_algs}
@@ -370,7 +375,7 @@ module Wifi
           bssid=#{next_bssid}
           ssid=#{network.ssid}
         END
-        if passphrase = network.passphrase
+        if passphrase = network.password
           ssid << <<-END_PASSPHRASE.gsub(/^ */, '')
             macaddr_acl=#{network.macaddr_acl}
             auth_algs=#{network.auth_algs}
@@ -522,10 +527,7 @@ module Wifi
     end
 
     def passphrase
-      if password
-        debug "network(#{name}) build passphare (wpa_psk)"
-        `wpa_passphrase '#{ssid}' '#{password}'`.match(/\tpsk=(.*)$/)[1].strip rescue nil
-      end
+      Wifi.wpa_passphrase ssid, password
     end
 
     alias_method :wpa_psk, :passphrase
