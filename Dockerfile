@@ -1,4 +1,4 @@
-FROM experimentalplatform/ubuntu:latest
+FROM ruby:2.3.0
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -7,8 +7,16 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ADD entrypoint.sh /entrypoint.sh
-RUN chmod 0755 /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
+COPY src /src
+RUN cd /src && bundle
+RUN cd /src && rake test
+RUN cd /src rake build && rake install && chmod 0755 /src/exe/wifi
+
+
+ENTRYPOINT ["/src/exe/wifi"]
 
 CMD ["/usr/sbin/hostapd", "/etc/hostapd/hostapd.conf"]
+
+
+
+

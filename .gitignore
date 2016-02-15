@@ -1,0 +1,13 @@
+/src/test/test.log
+/src/test/fixtures/etc/hostapd/hostapd.conf
+/vendor/
+/.bundle/
+/.yardoc
+/src/Gemfile.lock
+/_yardoc/
+/src/coverage/
+/doc/
+/pkg/
+/spec/reports/
+/tmp/
+src/test/coverage

@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+# Separated executable code so we can test more easily.
+
+require "hostapd"
+
+Wifi.start
+
+system ARGV.join(' ')
