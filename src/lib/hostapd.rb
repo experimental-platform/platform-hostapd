@@ -10,7 +10,7 @@ require 'logger'
 module Wifi
 
   def self.wpa_passphrase(ssid, passphrase)
-    if [ssid, passphrase].all? {|value| value.to_s.strip.length > 0 }
+    if [ssid, passphrase].all? { |value| value.to_s.strip.length > 0 }
       OpenSSL::PKCS5.pbkdf2_hmac_sha1(passphrase, ssid, 4096, 32).unpack("H*").first
     end
   end
@@ -140,12 +140,16 @@ module Wifi
       private_network_path = File.join config_path
       public_network_path = File.join config_path, 'guest'
 
+      debug 'Looking for private network at ' + File.join(private_network_path, 'enabled').to_s
       if File.exists? File.join(private_network_path, 'enabled')
+        debug 'Private network found, configuring...'
         config = Config.new private_network_path
         @networks << Network.new('private', config, config_path: config_path)
       end
 
+      debug 'Looking for public network at ' + File.join(public_network_path, 'enabled').to_s
       if File.exists? File.join(public_network_path, 'enabled')
+        debug 'Public network found, configuring...'
         config = Config.new public_network_path
         @networks << Network.new('public', config, config_path: config_path)
       end
