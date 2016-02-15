@@ -500,7 +500,10 @@ module Wifi
     def interface(build=true)
       @interface ||= if build
         debug "network(#{name}) build interface"
-        interface = Interface.new(options[:first_interface], self)
+        # find a line that looks like this and return the interface name only:
+        # 2: wlp2s0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc mq state DOWN mode DEFAULT
+        interface_name = `ip link show`.match(/^[0-9: \t]+wl[0-9a-z]+/)[0].split(/\s/)[1]
+        interface = Interface.new(interface_name, self)
         while Wifi.interface_taken?(interface)
           interface = interface.succ
         end
