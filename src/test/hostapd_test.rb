@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'securerandom'
 
 ROOT = File.expand_path '..', __FILE__
 ENV['PATH'] = "#{ File.join ROOT, 'fixtures', 'bin' }:#{ ENV['PATH'] }"
