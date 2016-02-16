@@ -375,7 +375,7 @@ module Wifi
 
       other_ssids = other_networks.map do |network|
         ssid = <<-END.gsub(/^ */, '')
-          bss=#{network.interface}
+          bss=#{network.interface.to_s.next}
           bssid=#{next_bssid}
           ssid=#{network.ssid}
         END
