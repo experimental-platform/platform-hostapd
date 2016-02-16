@@ -1,4 +1,4 @@
-Wiphy phy0
+Wiphy phy23
 	max # scan SSIDs: 4
 	max scan IEs length: 2257 bytes
 	Retry short limit: 7

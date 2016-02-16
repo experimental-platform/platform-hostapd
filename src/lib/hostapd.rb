@@ -413,7 +413,12 @@ module Wifi
     end
 
     def ieee80211n
-      !!`iw phy phy0 info`.match(/HT[248]{1}0/im) ? "1" : "0"
+      if result = `iw list`.match(/(^[a-zA-Z0-9]+)\s+([a-zA-Z0-9]+)/)
+        phy = result[2]
+      else
+        phy = 'phy0'
+      end
+      !!`iw phy #{phy} info`.match(/HT[248]{1}0/im) ? "1" : "0"
     end
 
     def mac_address
@@ -709,8 +714,7 @@ except-interface=lo
   module Generator
     class HardwareCapability
       DEFAULT_OPTIONS = {
-        interface: 'phy0',
-        iw_info: 'iw %{interface} info',
+        iw_info: 'iw phy %{interface} info',
         iw_capabilities_match: /band 1\:[\S\s]+?capabilities\:(?<capabilities>[\S\s]+?)frequencies\:/i,
         channel: "1"
       }
@@ -735,6 +739,15 @@ except-interface=lo
       DEFAULT_OPTIONS.each do |name, value|
         define_method(name) do
           options[name]
+        end
+      end
+
+      def interface
+        if result = `iw list`.match(/(^[a-zA-Z0-9]+)\s+([a-zA-Z0-9]+)/)
+          result[2]
+        else
+          # default: phy0
+          'phy0'
         end
       end
 
