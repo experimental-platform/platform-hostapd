@@ -5,6 +5,7 @@ Wiphy phy23
 	Retry long limit: 4
 	Coverage class: 0 (up to 0m)
 	Device supports RSN-IBSS.
+	Device supports AP-side u-APSD.
 	Device supports T-DLS.
 	Supported Ciphers:
 		* WEP40 (00-0f-ac:1)
@@ -32,12 +33,17 @@ Wiphy phy23
 	Band 1:
 		Capabilities: 0x11ef
 			RX LDPC
+			HT20/HT40
 			SM Power Save disabled
+			RX HT20 SGI
+			RX HT40 SGI
 			TX STBC
 			RX STBC 1-stream
 			Max AMSDU length: 3839 bytes
+			DSSS/CCK HT40
 		Maximum RX AMPDU length 65535 bytes (exponent: 0x003)
 		Minimum RX AMPDU time spacing: 8 usec (0x06)
+		HT TX/RX MCS rate indexes supported: 0-15
 		Bitrates (non-HT):
 			* 1.0 Mbps
 			* 2.0 Mbps (short preamble supported)
@@ -69,10 +75,14 @@ Wiphy phy23
 	Band 2:
 		Capabilities: 0x11ef
 			RX LDPC
+			HT20/HT40
 			SM Power Save disabled
+			RX HT20 SGI
+			RX HT40 SGI
 			TX STBC
 			RX STBC 1-stream
 			Max AMSDU length: 3839 bytes
+			DSSS/CCK HT40
 		Maximum RX AMPDU length 65535 bytes (exponent: 0x003)
 		Minimum RX AMPDU time spacing: 8 usec (0x06)
 		HT TX/RX MCS rate indexes supported: 0-15
@@ -91,49 +101,49 @@ Wiphy phy23
 			* 5220 MHz [44] (15.0 dBm) (no IR)
 			* 5240 MHz [48] (16.0 dBm) (no IR)
 			* 5260 MHz [52] (15.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5280 MHz [56] (15.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5300 MHz [60] (15.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5320 MHz [64] (15.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5500 MHz [100] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5520 MHz [104] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5540 MHz [108] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5560 MHz [112] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5580 MHz [116] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5600 MHz [120] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5620 MHz [124] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5640 MHz [128] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5660 MHz [132] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5680 MHz [136] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5700 MHz [140] (17.0 dBm) (no IR, radar detection)
-			  DFS state: usable (for 247558 sec)
+			  DFS state: usable (for 2391 sec)
 			  DFS CAC time: 0 ms
 			* 5745 MHz [149] (18.0 dBm) (no IR)
 			* 5765 MHz [153] (18.0 dBm) (no IR)
