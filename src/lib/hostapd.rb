@@ -375,7 +375,7 @@ module Wifi
 
       other_ssids = other_networks.map do |network|
         ssid = <<-END.gsub(/^ */, '')
-          bss=#{network.interface}
+          bss=#{network.interface.to_s.next}
           bssid=#{next_bssid}
           ssid=#{network.ssid}
         END
@@ -402,6 +402,9 @@ module Wifi
     def config_file(&block)
       FileUtils.mkdir_p(File.dirname(config_path)) unless configured?
       File.open(config_path, 'w', &block)
+      if File.directory? '/etc/protonet/system/wifi'
+        FileUtils.cp config_path, '/etc/protonet/system/wifi/hostapd.conf.backup'
+      end
     end
 
     def configured?

@@ -317,7 +317,7 @@ class HostapdTest < Minitest::Test
 
   def test_bss_is_set_when_two_networks_are_enabled
     Wifi.start
-    assert_includes config, 'bss=wlp2s0'
+    assert_includes config, 'bss=wlp2s1'
   end
 
 end
