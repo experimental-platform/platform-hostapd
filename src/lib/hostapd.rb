@@ -11,18 +11,16 @@ module Wifi
 
   def self.start(config_path, hostapd_path)
     networks = network_config config_path
-    # TODO: Is this rubyish?
-    if not networks.any?
-      return false
+    if networks.any?
+      info "found wifis: #{networks.map { |h| h[:name] }}"
+      config_data = create_config_file networks, config_path
+      write_file hostapd_path, config_data
+      # only for debugging purposes:
+      if File.directory? config_path
+        FileUtils.cp hostapd_path, File.join(config_path, 'hostapd.conf.backup')
+      end
+      true
     end
-    info "found wifis: #{networks.map { |h| h[:name] }}"
-    config_data = create_config_file networks, config_path
-    write_file hostapd_path, config_data
-    # only for debugging purposes:
-    if File.directory? config_path
-      FileUtils.cp hostapd_path, File.join(config_path, 'hostapd.conf.backup')
-    end
-    true
   end
 
   private
@@ -57,7 +55,7 @@ module Wifi
     networks
   end
 
-  def self.get_physical_interface
+  def self.physical_interface
     if result = `iw list`.match(/(^[a-zA-Z0-9]+)\s+([a-zA-Z0-9]+)/)
       result[2]
     else
@@ -66,8 +64,7 @@ module Wifi
   end
 
   def self.ieee80211n
-    phy = get_physical_interface
-    !!`iw phy #{phy} info`.match(/HT[248]{1}0/im) ? "1" : "0"
+    !!`iw phy #{physical_interface} info`.match(/HT[248]{1}0/im) ? "1" : "0"
   end
 
   def self.channel(config_path)
@@ -87,14 +84,14 @@ module Wifi
     %w(wlp2s0 public)
   end
 
-  def self.get_password(network)
+  def self.password_for_network(network)
     path = File.join network[:path], 'password'
     File.read path if File.readable? path
   end
 
 
   def self.wpa_psk(network)
-    wpa_passphrase ssid(network), get_password(network)
+    wpa_passphrase ssid(network), password_for_network(network)
   end
 
   def self.first_bssid(networks)
@@ -118,7 +115,7 @@ module Wifi
 
   def self.ht_capab(config_path)
     channel_width_set = channel(config_path).to_i < 8 ? "+" : "-"
-    raw = `iw phy #{get_physical_interface} info`
+    raw = `iw phy #{physical_interface} info`
     iw_caps = raw.match(/band 1\:[\S\s]+?capabilities\:(?<capabilities>[\S\s]+?)frequencies\:/i)[:capabilities]
     result = ""
     # CHANNEL WIDTH (aka: CHANNEL BONDING): http://wifijedi.com/2009/01/25/how-stuff-works-channel-bonding/
