@@ -4,6 +4,6 @@
 
 require "hostapd"
 
-Wifi.start
+Wifi.start '/etc/protonet/system/wifi', '/etc/hostapd/hostapd.conf'
 
 system ARGV.join(' ')

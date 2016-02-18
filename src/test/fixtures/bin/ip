@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-if [[ -z "$3" ]]; then
-    cat "$(dirname $0)/ip-addr-show-full.out"
+if [[ $2 == 'link' ]]; then
+    cat "$(dirname $0)/ip-link-show-full.out"
 else
-    cat "$(dirname $0)/ip-addr-show.out"
+    if [[ -z "$3" ]]; then
+        cat "$(dirname $0)/ip-addr-show-full.out"
+    else
+        cat "$(dirname $0)/ip-addr-show.out"
+    fi
 fi

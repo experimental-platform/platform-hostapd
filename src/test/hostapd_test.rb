@@ -190,7 +190,7 @@ class HostapdTest < Minitest::Test
     # FIXME: this name will be **set** in future versions.
     # FIXME: We'll need to mock the call that sets the name.
     Wifi.start @config_path, @hostapd_config_path
-    assert_includes config, "interface=wlp2s0"
+    assert_includes config, "interface=wl_private"
   end
 
   def test_hw_capabilities_are_read_from_iw_info
@@ -305,7 +305,7 @@ class HostapdTest < Minitest::Test
 
   def test_bss_is_set_when_two_networks_are_enabled
     Wifi.start @config_path, @hostapd_config_path
-    assert_includes config, 'bss=public'
+    assert_includes config, 'bss=wl_public'
   end
 
 end
