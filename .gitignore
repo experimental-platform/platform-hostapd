@@ -11,3 +11,5 @@
 /spec/reports/
 /tmp/
 src/test/coverage
+hostapd.conf.backup
+password
