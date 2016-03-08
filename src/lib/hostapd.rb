@@ -93,7 +93,7 @@ module Wifi
     raise "Renaming #{interface} to #{name} didn't work: #{output}" unless $?.success?
     output = `ip link set dev #{name} up 2>&1`
     raise "Starting #{name} didn't work: #{output}" unless $?.success?
-    sleep ENV.fetch('SLEEP_TIME', 5)
+    sleep ENV.fetch('SLEEP_TIME', 5).to_i
     output = `systemctl restart systemd-networkd`
     raise "Restarting networkd didn't work: #{output}" unless $?.success?
     sleep ENV.fetch('SLEEP_TIME', 5).to_i
