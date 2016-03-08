@@ -93,8 +93,10 @@ module Wifi
     raise "Renaming #{interface} to #{name} didn't work: #{output}" unless $?.success?
     output = `ip link set dev #{name} up 2>&1`
     raise "Starting #{name} didn't work: #{output}" unless $?.success?
+    sleep 5
     output = `systemctl restart systemd-networkd`
     raise "Restarting networkd didn't work: #{output}" unless $?.success?
+    sleep 5
   end
 
   Contract Array => Array
