@@ -97,6 +97,7 @@ module Wifi
     output = `systemctl restart systemd-networkd`
     raise "Restarting networkd didn't work: #{output}" unless $?.success?
     sleep 5
+    output
   end
 
   Contract Array => Array
