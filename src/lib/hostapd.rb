@@ -93,10 +93,6 @@ module Wifi
     raise "Renaming #{interface} to #{name} didn't work: #{output}" unless $?.success?
     output = `ip link set dev #{name} up 2>&1`
     raise "Starting #{name} didn't work: #{output}" unless $?.success?
-    sleep ENV.fetch('SLEEP_TIME', 5).to_i
-    output = `systemctl restart systemd-networkd`
-    raise "Restarting networkd didn't work: #{output}" unless $?.success?
-    sleep ENV.fetch('SLEEP_TIME', 5).to_i
     output
   end
 
@@ -115,6 +111,11 @@ module Wifi
       debug "Setting interface #{interfaces[0]} to #{first_network_name}"
       set_interface_name interfaces[0], first_network_name
     end
+    sleep ENV.fetch('SLEEP_TIME', 5).to_i
+    debug 'Restarting systemd-networkd.'
+    output = `systemctl restart systemd-networkd`
+    raise "Restarting networkd didn't work: #{output}" unless $?.success?
+    sleep ENV.fetch('SLEEP_TIME', 5).to_i
     [first_network_name] + networks[1..-1].map { |e| e[:name] }
   end
 
