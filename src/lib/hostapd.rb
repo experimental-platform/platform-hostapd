@@ -152,7 +152,12 @@ module Wifi
   Contract Hash => String
 
   def self.ssid(network)
-    hostname = `hostname -s`.chomp!
+    hostname_path = File.join(network[:path], 'hostname')
+    if network[:name] == 'wl_private' and File.exists? hostname_path
+      hostname = File.read hostname_path
+    else
+        hostname = `hostname -s`.chomp!
+    end
     network[:name] == 'wl_private' ? hostname : "#{ hostname } (public)"
   end
 
