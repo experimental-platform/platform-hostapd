@@ -139,6 +139,18 @@ class HostapdTest < Minitest::Test
     assert_includes config, "ssid=#{ hostname }"
   end
 
+  def test_private_ssid_is_taken_form_hostname_file
+    # used in initial setup only
+    hostname_file = File.join(@config_path, 'hostname')
+    File.open(hostname_file, 'w') do |file|
+      file.write('foobarblu')
+    end
+    Wifi.start @config_path, @hostapd_config_path
+    assert_includes config, "ssid=foobarblu"
+  ensure
+    File.unlink hostname_file if File.exists? hostname_file
+  end
+
   def test_public_ssid_is_generated_from_private_ssid_and_suffix
     Wifi.start @config_path, @hostapd_config_path
     assert_includes config, "ssid=#{ hostname } (public)"
