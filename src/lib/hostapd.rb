@@ -152,12 +152,15 @@ module Wifi
   Contract Hash => String
 
   def self.ssid(network)
+    # on initial setup the wifi uses a statically set name instead of the hostname.
+    # this works only for the private wifi and can be set in `hostname_path`.
     hostname_path = File.join(network[:path], 'hostname')
     if network[:name] == 'wl_private' and File.exists? hostname_path
       hostname = File.read hostname_path
     else
-        hostname = `hostname -s`.chomp!
+      hostname = `hostname -s`
     end
+    hostname = hostname.strip
     network[:name] == 'wl_private' ? hostname : "#{ hostname } (public)"
   end
 
