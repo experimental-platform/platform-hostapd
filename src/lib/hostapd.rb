@@ -123,7 +123,8 @@ module Wifi
 
   def self.password_for_network(network)
     path = File.join network[:path], 'password'
-    File.read path if File.readable? path
+    password = File.read path if File.readable? path
+    password.strip
   end
 
   Contract Hash => String
