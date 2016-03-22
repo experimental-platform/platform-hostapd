@@ -123,7 +123,7 @@ module Wifi
 
   def self.password_for_network(network)
     path = File.join network[:path], 'password'
-    File.read path if File.readable? path
+    File.read(path).strip if File.readable? path
   end
 
   Contract Hash => String
@@ -204,6 +204,8 @@ module Wifi
         channel=#{channel(config_path)}
         ht_capab=#{ht_capab(config_path)}
         interface=#{interface_name(networks)[0]}
+        logger_stdout=-1
+        logger_stdout_level=2
 
         ssid=#{ssid(first_network)}
         macaddr_acl=0
