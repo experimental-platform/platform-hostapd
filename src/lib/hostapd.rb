@@ -206,7 +206,7 @@ module Wifi
         ht_capab=#{ht_capab(config_path)}
         interface=#{interface_name(networks)[0]}
         logger_stdout=-1
-        logger_stdout_level=1
+        logger_stdout_level=2
 
         ssid=#{ssid(first_network)}
         macaddr_acl=0
