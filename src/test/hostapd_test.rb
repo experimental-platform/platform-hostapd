@@ -20,7 +20,8 @@ class HostapdTest < Minitest::Test
     def Wifi::info(msg)
       nil
     end
-    @config_path = File.join ETC, %w[ protonet system wifi ]
+    @config_path_base = File.join ETC, %w[ protonet ]
+    @config_path = File.join @config_path_base, %w[ system wifi ]
     @channel_path = File.join ETC, %w[ protonet system wifi channel ]
     @hostapd_config_path = File.join ETC, 'hostapd', 'hostapd.conf'
     File.unlink @hostapd_config_path if File.exists? @hostapd_config_path
@@ -153,7 +154,7 @@ class HostapdTest < Minitest::Test
 
   def test_private_ssid_is_taken_form_box_name_file
     # used in initial setup only
-    box_name_file = File.join(@config_path, 'box_name')
+    box_name_file = File.join(@config_path_base, 'box_name')
     File.open(box_name_file, 'w') do |file|
       file.write('foobarblu')
     end
