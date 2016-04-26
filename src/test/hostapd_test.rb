@@ -50,7 +50,7 @@ class HostapdTest < Minitest::Test
   end
 
   def read_hostname
-    `hostname -s`.chomp!
+    'Protonet'
   end
 
   def set_hostname(hostname = read_hostname)
@@ -134,7 +134,7 @@ class HostapdTest < Minitest::Test
     assert_includes config, "wpa_psk=#{@guest_psk}"
   end
 
-  def test_private_ssid_is_taken_from_hostname
+  def test_private_ssid_is_static
     Wifi.start @config_path, @hostapd_config_path
     assert_includes config, "ssid=#{ hostname }"
   end
@@ -150,6 +150,19 @@ class HostapdTest < Minitest::Test
   ensure
     File.unlink hostname_file if File.exists? hostname_file
   end
+
+  def test_private_ssid_is_taken_form_box_name_file
+    # used in initial setup only
+    box_name_file = File.join(@config_path, 'box_name')
+    File.open(box_name_file, 'w') do |file|
+      file.write('foobarblu')
+    end
+    Wifi.start @config_path, @hostapd_config_path
+    assert_includes config, "ssid=foobarblu"
+  ensure
+    File.unlink box_name_file if File.exists? box_name_file
+  end
+
 
   def test_public_ssid_is_generated_from_private_ssid_and_suffix
     Wifi.start @config_path, @hostapd_config_path
