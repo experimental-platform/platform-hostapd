@@ -17,7 +17,3 @@ RUN cd /src rake build && rake install && chmod 0755 /src/exe/wifi
 
 
 CMD ["dumb-init", "/src/exe/wifi", "/usr/sbin/hostapd", "/etc/hostapd/hostapd.conf"]
-
-
-
-

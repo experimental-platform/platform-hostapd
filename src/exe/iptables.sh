@@ -32,7 +32,7 @@ function stop() {
 function run() {
     local DEVICE arg
     arg=$1
-    DEVICE=$(ip route get 8.8.8.8 | grep -Po "(?<=dev )en[0-9a-z_]+")
+    DEVICE=$(ip route get 8.8.8.8 | grep -Po "(?<=dev )e[nt]+[0-9a-z_]+")
 
     if [[ -z "${DEVICE}" ]]; then
         echo "Device not found. Can you help me find it?"
