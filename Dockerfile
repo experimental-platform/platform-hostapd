@@ -2,7 +2,7 @@ FROM ruby:2.3.0
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && \
+RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y wpasupplicant hostapd hostap-utils iptables iw iproute2 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
