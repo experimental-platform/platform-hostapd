@@ -140,15 +140,15 @@ class HostapdTest < Minitest::Test
     assert_includes config, "ssid=#{ hostname }"
   end
 
-  
-  def test_private_ssid_is_taken_form_box_name_file
+  def test_private_ssid_is_taken_form_box_name_file_and_cut_to_size
     # used in initial setup only
     box_name_file = File.join(@config_path_base, 'box_name')
     File.open(box_name_file, 'w') do |file|
-      file.write('foobarblu')
+      file.write('1234567890abcdefgijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
     end
     Wifi.start @config_path, @hostapd_config_path
-    assert_includes config, "ssid=foobarblu"
+    assert_includes config, "ssid=uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    assert_includes config, "ssid=DEFGHIJKLMNOPQRSTUVWXYZ (public)"
   ensure
     File.unlink box_name_file if File.exists? box_name_file
   end

@@ -150,6 +150,21 @@ module Wifi
     '%02x:%02x:%02x:%02x:%02x:%02x' % mac
   end
 
+  Contract String => String
+
+  def self.cleanup_hostname(hostname)
+    # max 32 chars length. Unicode is fine, though.
+    if hostname.bytesize > 32
+      # we don't want to cut a unicode rune in half, so working with bytesize is out.
+      if hostname.bytesize != hostname.length
+        hostname = hostname.index('public') == nil ? 'Good One. LOL.' : 'Good One. LOL. (public)'
+      else
+        hostname = hostname.length > 32 ? hostname[hostname.length-32, 32] : hostname
+      end
+    end
+    hostname
+  end
+
   Contract Hash => String
 
   def self.ssid(network)
@@ -160,7 +175,8 @@ module Wifi
       hostname = 'Protonet-default'
     end
     hostname = hostname.strip
-    network[:name] == 'wl_private' ? hostname : "#{ hostname } (public)"
+    hostname = network[:name] == 'wl_private' ? hostname : "#{ hostname } (public)"
+    self.cleanup_hostname(hostname)
   end
 
   Contract String, String => String
