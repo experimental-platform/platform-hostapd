@@ -67,6 +67,7 @@ module Wifi
 
   def self.physical_interface
     result = `iw list`.match(/(^[a-zA-Z0-9]+)\s+([a-zA-Z0-9]+)/)
+    raise "iw list didn't work: #{output}" unless $?.success?
     if result and result.length > 2
       result[2]
     else
@@ -75,7 +76,9 @@ module Wifi
   end
 
   def self.ieee80211n
-    !!`iw phy #{physical_interface} info`.match(/HT[248]{1}0/im) ? '1' : '0'
+    has_ht = !!`iw phy #{physical_interface} info`.match(/HT[248]{1}0/im) ? '1' : '0'
+    raise "ip phy didn't work: #{output}" unless $?.success?
+    has_ht
   end
 
   Contract String => String
@@ -105,6 +108,7 @@ module Wifi
       m = line.match(/(^[0-9]+:\s+)(wl[0-9a-z_\-]+)/)
       m[2] if m and m.length >= 3
     end.compact
+    raise "ip link show didn't work: #{output}" unless $?.success?
     first_network_name = networks[0][:name]
     # interface name should be wl_public or wl_private for
     # the corresponding systemd network units to work
@@ -137,7 +141,9 @@ module Wifi
 
   def self.first_bssid(networks)
     iface = interface_name(networks)[0]
+    # TODO: fix this shit (error code? returns what?)!
     match = `ip addr show #{iface}`.match(/link\/ether.*?(([A-F0-9]{2}:){5}[A-F0-9]{2})/im)
+    raise "ip addr show didn't work: #{output}" unless $?.success?
     if match and match.length > 1
       mac_address = match[1]
     else
@@ -150,6 +156,21 @@ module Wifi
     '%02x:%02x:%02x:%02x:%02x:%02x' % mac
   end
 
+  Contract String => String
+
+  def self.cleanup_hostname(hostname)
+    # max 32 chars length. Unicode is fine, though.
+    if hostname.bytesize > 32
+      # we don't want to cut a unicode rune in half, so working with bytesize is out.
+      if hostname.bytesize != hostname.length
+        hostname = hostname.index('public') == nil ? 'Good One. LOL.' : 'Good One. LOL. (public)'
+      else
+        hostname = hostname.length > 32 ? hostname[hostname.length-32, 32] : hostname
+      end
+    end
+    hostname
+  end
+
   Contract Hash => String
 
   def self.ssid(network)
@@ -160,7 +181,8 @@ module Wifi
       hostname = 'Protonet-default'
     end
     hostname = hostname.strip
-    network[:name] == 'wl_private' ? hostname : "#{ hostname } (public)"
+    hostname = network[:name] == 'wl_private' ? hostname : "#{ hostname } (public)"
+    self.cleanup_hostname(hostname)
   end
 
   Contract String, String => String
@@ -168,6 +190,7 @@ module Wifi
   def self.ht_capab(config_path)
     channel_width_set = channel(config_path).to_i < 8 ? '+' : '-'
     raw = `iw phy #{physical_interface} info`
+    raise "ip phy something didn't work: #{output}" unless $?.success?
     iw_caps = raw.match(/band 1:[\S\s]+?capabilities:(?<capabilities>[\S\s]+?)frequencies:/i)[:capabilities]
     result = ''
     # CHANNEL WIDTH (aka: CHANNEL BONDING): http://wifijedi.com/2009/01/25/how-stuff-works-channel-bonding/
