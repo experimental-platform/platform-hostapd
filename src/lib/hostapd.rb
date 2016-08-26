@@ -8,6 +8,9 @@ require 'openssl'
 require 'logger'
 require 'contracts'
 
+# RADAR: because otherwise our docker ruby image mysteriously uses "Encoding:US-ASCII"
+Encoding.default_external = 'utf-8'
+
 module Wifi
   include Contracts
 
