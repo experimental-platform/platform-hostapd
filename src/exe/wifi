@@ -1,9 +1,0 @@
-#!/usr/bin/env ruby
-
-# Separated executable code so we can test more easily.
-
-require "hostapd"
-
-Wifi.start '/etc/protonet/system/wifi', '/etc/hostapd/hostapd.conf'
-
-system ARGV.join(' ')
