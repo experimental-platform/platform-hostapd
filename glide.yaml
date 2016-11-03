@@ -1,0 +1,8 @@
+package: .
+import:
+- package: github.com/Sirupsen/logrus
+  version: ^0.10.0
+- package: github.com/docker/libcontainer
+  version: ^2.2.1
+  subpackages:
+  - netlink
