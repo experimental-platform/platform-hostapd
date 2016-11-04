@@ -1,16 +1,22 @@
 hash: afee6b507bb456b6a72a8b5a6fdd39703101c18e006d95bb108863eaaab5ec7b
-updated: 2016-11-03T11:14:01.869239352+01:00
+updated: 2016-11-04T12:54:15.869240254+01:00
 imports:
+- name: github.com/coreos/go-systemd
+  version: 64d5cd7cb947834ef93874e82745c42ad6de4d0e
+  subpackages:
+  - dbus
 - name: github.com/docker/libcontainer
   version: 5dc7ba0f24332273461e45bc49edcb4d5aa6c44c
   subpackages:
   - netlink
+- name: github.com/godbus/dbus
+  version: 835f9e73726c4b57414ba7db6f0b0c58f72db573
 - name: github.com/hkwi/nlgo
   version: ea8647cf84ffa37db4279fc836050a58ff91f5fa
 - name: github.com/jessevdk/go-flags
   version: 37c8226983775d404b6edfebd44be1078bd0fe95
 - name: github.com/Sirupsen/logrus
-  version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
+  version: d26492970760ca5d33129d2d799e34be5c4782eb
 - name: golang.org/x/crypto
   version: 9477e0b78b9ac3d0b03822fd95422e2fe07627cd
   subpackages:

@@ -7,9 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"os/exec"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -218,24 +216,6 @@ func wpaPassphrase(ssid, passphrase string) string {
 	return fmt.Sprintf("%x", keyData)
 }
 
-func physicalInterface() (string, error) {
-	cmd := exec.Command("/sbin/iw", "list")
-	output, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	r := regexp.MustCompile(`(^[a-zA-Z0-9]+)\s+([a-zA-Z0-9]+)`)
-
-	found := r.FindSubmatch(output)
-
-	for _, a := range found {
-		fmt.Printf(" >>> %v\n", string(a))
-	}
-
-	return "", nil
-}
-
 func getConfiguredChannel(configPath string) uint {
 	filename := path.Join(configPath, "system", "wifi", "channel")
 	data, err := ioutil.ReadFile(filename)
@@ -305,8 +285,10 @@ func ensureInterfaceExist(name string, sleepTime int) error {
 
 		time.Sleep(time.Second * time.Duration(sleepTime))
 		log.Debug("Restarting systemd-networkd.")
-		// TODO systemctl restart systemd-networkd
-		// if failed log.Debugf("Restarting networkd didn't work: %v\n")
+		err = restartNetworkD(5)
+		if err != nil {
+			return fmt.Errorf("ensureInterfaceExist(): %s", err.Error())
+		}
 		time.Sleep(time.Second * time.Duration(sleepTime))
 	}
 
