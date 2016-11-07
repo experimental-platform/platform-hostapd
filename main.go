@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"text/template"
 	"time"
+	"unicode/utf8"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/libcontainer/netlink"
@@ -33,7 +34,18 @@ func getSSID(configPath string) string {
 		return "Protonet-default"
 	}
 
-	return strings.Trim(string(data), " \n\r\t")
+	return strings.Trim(trimSSIDTo32Bytes(data), " \n\r\t")
+}
+
+// trimSSIDTo32Bytes trims an SSID to 32 bytes, making sure no UTF-8 rune is cut
+func trimSSIDTo32Bytes(input []byte) string {
+	for len(input) > 32 {
+		_, lastRuneLen := utf8.DecodeLastRune(input)
+		l := len(input)
+		input = input[0 : l-lastRuneLen]
+	}
+
+	return string(input)
 }
 
 // was 'network_config'
