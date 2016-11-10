@@ -15,7 +15,7 @@ install:
  - go build -a -installsuffix cgo -v -ldflags='-s -w'
  - docker build -t "quay.io/experimentalplatform/hostapd:$TRAVIS_BRANCH" --label "build=$TRAVIS_BUILD_NUMBER" --label "commit=$TRAVIS_COMMIT" .
 script:
- - go test -v
+ - go test -v -cover
 after_success:
  - docker login -u "$QUAY_USER" -p "$QUAY_PASS" quay.io
  - docker push "quay.io/experimentalplatform/hostapd:$TRAVIS_BRANCH"

@@ -1,8 +1,8 @@
 hash: afee6b507bb456b6a72a8b5a6fdd39703101c18e006d95bb108863eaaab5ec7b
-updated: 2016-11-04T12:54:15.869240254+01:00
+updated: 2016-11-10T11:53:17.556085963+01:00
 imports:
 - name: github.com/coreos/go-systemd
-  version: 64d5cd7cb947834ef93874e82745c42ad6de4d0e
+  version: d7387fdbe0249794c5bdcfa53b964aa5517e81a9
   subpackages:
   - dbus
 - name: github.com/docker/libcontainer
@@ -22,7 +22,11 @@ imports:
   subpackages:
   - pbkdf2
 - name: golang.org/x/sys
-  version: c200b10b5d5e122be351b67af224adc6128af5bf
+  version: 9a2e24c3733eddc63871eda99f253e2db29bd3b9
   subpackages:
   - unix
-testImports: []
+testImports:
+- name: github.com/stretchr/testify
+  version: 232e8563676cd15c3a36ba5e675ad4312ac4cb11
+  subpackages:
+  - assert
