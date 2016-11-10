@@ -114,23 +114,8 @@ func getBSSID(ifName string) (string, error) {
 	return mac.String(), nil
 }
 
-func generateConfigFile(networks []network, configPath string) (string, error) {
+func generateConfigFile(networks []network, configPath string, has5GHz bool, htcaps *htCapabilities, bssid string) (string, error) {
 	log.Debugln("hostapd configure")
-
-	has5GHz, err := has5GHzSupport()
-	if err != nil {
-		return "", err
-	}
-
-	phys, err := getPhysicalInterfaces()
-	if err != nil {
-		return "", err
-	}
-	if len(phys) == 0 {
-		return "", fmt.Errorf("No WiFi physical interfaces found")
-	}
-
-	htcaps, err := getHTCapabilities(phys[0])
 
 	type cfgData struct {
 		IEEE80211N bool
@@ -149,26 +134,20 @@ func generateConfigFile(networks []network, configPath string) (string, error) {
 	cfg := cfgData{
 		IEEE80211N: has5GHz,
 		Channel:    getConfiguredChannel(configPath),
-		HTCap:      htcaps[0].AsConfigString(configPath),
+		HTCap:      htcaps.AsConfigString(configPath),
 		Name:       networks[0].Name,
 		SSID:       networks[0].SSID,
 		Pass:       wpaPassphrase(networks[0].SSID, networks[0].Password),
 	}
 
 	if len(networks) == 2 {
-		bssid, err2 := getBSSID(networks[0].Name)
-		if err2 != nil {
-			return "", err2
-		}
-
 		cfg.SecondName = networks[1].Name
 		cfg.FirstBSSID = bssid
 		cfg.SecondSSID = networks[1].SSID
 		cfg.SecondPass = wpaPassphrase(networks[1].SSID, networks[1].Password)
 	}
 
-	templateString := `
-ctrl_interface=/var/run/hostapd
+	templateString := `ctrl_interface=/var/run/hostapd
 driver=nl80211
 hw_mode=g
 ieee80211n={{if .IEEE80211N}}1{{else}}0{{end}}
@@ -210,7 +189,7 @@ wpa_psk={{.SecondPass}}
 		return "", err
 	}
 
-	bufferData := make([]byte, 10240)
+	var bufferData []byte
 	buffer := bytes.NewBuffer(bufferData)
 
 	err = tmpl.Execute(buffer, cfg)
@@ -219,6 +198,64 @@ wpa_psk={{.SecondPass}}
 	}
 
 	return buffer.String(), nil
+}
+
+func prepareAndGenerateConfigFile(configPath string, sleepTime int) (string, error) {
+	networks, err := getNeededNetworks(configPath)
+	if err != nil {
+		return "", fmt.Errorf("Failed to get network list: %v\n", err.Error())
+	}
+
+	if len(networks) == 0 {
+		log.Println("No WiFi neworks are enabled. Exitting")
+		os.Exit(0)
+	}
+
+	if len(networks) != 0 {
+		log.Infoln("Found wifi networks:")
+		for _, n := range networks {
+			log.Infof(" - %s", n.Name)
+		}
+	}
+
+	err = ensureInterfaceExist(networks[0].Name, sleepTime)
+	if err != nil {
+		return "", err
+	}
+
+	has5GHz, err := has5GHzSupport()
+	if err != nil {
+		return "", err
+	}
+
+	phys, err := getPhysicalInterfaces()
+	if err != nil {
+		return "", err
+	}
+	if len(phys) == 0 {
+		return "", fmt.Errorf("No WiFi physical interfaces found")
+	}
+
+	htcaps, err := getHTCapabilities(phys[0])
+	if err != nil {
+		return "", err
+	}
+
+	var bssid string
+	if len(networks) == 2 {
+		var err2 error
+		bssid, err2 = getBSSID(networks[0].Name)
+		if err2 != nil {
+			return "", err2
+		}
+	}
+
+	cfg, err := generateConfigFile(networks, configPath, has5GHz, htcaps[0], bssid)
+	if err != nil {
+		return "", fmt.Errorf("Failed to generate config file: %v", err.Error())
+	}
+
+	return cfg, nil
 }
 
 func wpaPassphrase(ssid, passphrase string) string {
@@ -326,31 +363,9 @@ func main() {
 		log.Debugln("Debug mode enabled.")
 	}
 
-	networks, err := getNeededNetworks(opts.SKVSPath)
+	cfg, err := prepareAndGenerateConfigFile(opts.SKVSPath, opts.SleepTime)
 	if err != nil {
-		log.Fatalf("Failed to get network list: %v\n", err.Error())
-	}
-
-	if len(networks) == 0 {
-		log.Println("No WiFi neworks are enabled. Exitting")
-		os.Exit(0)
-	}
-
-	if len(networks) != 0 {
-		log.Infoln("Found wifi networks:")
-		for _, n := range networks {
-			log.Infof(" - %s", n.Name)
-		}
-	}
-
-	err = ensureInterfaceExist(networks[0].Name, opts.SleepTime)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cfg, err := generateConfigFile(networks, opts.SKVSPath)
-	if err != nil {
-		log.Fatalf("Failed to generate config file: %v", err.Error())
+		log.Fatalln(err)
 	}
 
 	log.Debugf("Generated config file:\n%s", cfg)
