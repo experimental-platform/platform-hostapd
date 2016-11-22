@@ -1,77 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"reflect"
 	"syscall"
 
 	"github.com/hkwi/nlgo"
 )
-
-func getFreqsFromNl80211Policy(b nlgo.NlaValue) ([]uint32, error) {
-	aMap, ok := b.(nlgo.AttrMap)
-	if !ok {
-		return nil, fmt.Errorf("getFreqsFromNl80211Policy: input is not a nlgo.AttrMap but a '%s'", reflect.TypeOf(b).Name())
-	}
-
-	if aMap.Policy.Prefix != "NL80211_ATTR" {
-		return nil, fmt.Errorf("getFreqsFromNl80211Policy: input is not a 'NL80211_ATTR' but a '%s'", aMap.Policy.Prefix)
-	}
-
-	bands := aMap.Get(nlgo.NL80211_ATTR_WIPHY_BANDS)
-	if bands == nil {
-		return []uint32{}, nil
-	}
-
-	var values []uint32
-	for _, band := range bands.(nlgo.AttrSlice) {
-		freqs, err := getFreqsFromBand(band)
-		if err != nil {
-			panic(err)
-		}
-
-		values = append(values, freqs...)
-	}
-
-	return values, nil
-}
-
-func getFreqsFromBand(b nlgo.Attr) ([]uint32, error) {
-	aMap, ok := b.Value.(nlgo.AttrMap)
-	if !ok {
-		return nil, fmt.Errorf("getFreqsFromBand: input is not a nlgo.AttrMap but a '%s'", reflect.TypeOf(b).Name())
-	}
-
-	if aMap.Policy.Prefix != "BAND" {
-		return nil, fmt.Errorf("getFreqFromFreq: input is not a 'BAND' but a '%s'", aMap.Policy.Prefix)
-	}
-
-	var values []uint32
-	freqs := aMap.Get(nlgo.NL80211_BAND_ATTR_FREQS)
-	for _, f := range freqs.(nlgo.AttrSlice) {
-		num, err := getFreqFromFreq(f)
-		if err != nil {
-			return nil, err
-		}
-
-		values = append(values, num)
-	}
-
-	return values, nil
-}
-
-func getFreqFromFreq(f nlgo.Attr) (uint32, error) {
-	aMap, ok := f.Value.(nlgo.AttrMap)
-	if !ok {
-		return 0, fmt.Errorf("getFreqFromFreq: input is not a nlgo.AttrMap but a '%s'", reflect.TypeOf(f).Name())
-	}
-
-	if aMap.Policy.Prefix != "FREQUENCY_ATTR" {
-		return 0, fmt.Errorf("getFreqFromFreq: input is not a 'FREQUENCY_ATTR' but a '%s'", aMap.Policy.Prefix)
-	}
-
-	return uint32(aMap.Get(nlgo.NL80211_FREQUENCY_ATTR_FREQ).(nlgo.U32)), nil
-}
 
 func getLogicalInterfaces() ([]string, error) {
 	hub, err := nlgo.NewGenlHub()
