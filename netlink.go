@@ -6,8 +6,18 @@ import (
 	"github.com/hkwi/nlgo"
 )
 
-func getLogicalInterfaces() ([]string, error) {
+type genlHuber interface {
+	Family(string) nlgo.GenlFamily
+	Sync(nlgo.GenlMessage) ([]nlgo.GenlMessage, error)
+}
+
+var newGenHub = func() (genlHuber, error) {
 	hub, err := nlgo.NewGenlHub()
+	return hub, err
+}
+
+func getLogicalInterfaces() ([]string, error) {
+	hub, err := newGenHub()
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +59,7 @@ func getLogicalInterfaces() ([]string, error) {
 }
 
 func getPhysicalInterfaces() ([]string, error) {
-	hub, err := nlgo.NewGenlHub()
+	hub, err := newGenHub()
 	if err != nil {
 		panic(err)
 	}
