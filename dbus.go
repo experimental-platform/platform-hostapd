@@ -6,9 +6,17 @@ import (
 	"github.com/coreos/go-systemd/dbus"
 )
 
+type dbusConnectioner interface {
+	RestartUnit(string, string, chan<- string) (int, error)
+}
+
+var newDBusConnection = func() (dbusConnectioner, error) {
+	return dbus.New()
+}
+
 func restartNetworkD(maxRetries int) error {
 
-	conn, err := dbus.New()
+	conn, err := newDBusConnection()
 	if err != nil {
 		return err
 	}
