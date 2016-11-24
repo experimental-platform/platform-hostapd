@@ -9,7 +9,7 @@ import (
 )
 
 func has5GHzSupport() (bool, error) {
-	hub, err := nlgo.NewGenlHub()
+	hub, err := newGenHub()
 	if err != nil {
 		return false, err
 	}
@@ -93,7 +93,7 @@ func (c *htCapabilities) AsConfigString(configPath string) string {
 }
 
 func getBandPolicies(phy string) ([]nlgo.Attr, error) {
-	hub, err := nlgo.NewGenlHub()
+	hub, err := newGenHub()
 	if err != nil {
 		panic(err)
 	}
