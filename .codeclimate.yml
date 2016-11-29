@@ -1,0 +1,18 @@
+engines:
+  govet:
+    enabled: true
+  gofmt:
+    enabled: true
+  fixme:
+    enabled: true
+  golint:
+    enabled: true
+#    config:
+#      min_confidence: 0.9
+  shellcheck:
+    enabled: true
+ratings:
+  paths:
+    - "**.go"
+exclude_paths:
+  config/

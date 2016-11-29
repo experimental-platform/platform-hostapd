@@ -1,4 +1,0 @@
-2: wlp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
-    link/ether 00:0e:8e:64:2a:9c brd ff:ff:ff:ff:ff:ff
-    inet6 fe80::20e:8eff:fe64:2a9c/64 scope link
-       valid_lft forever preferred_lft forever

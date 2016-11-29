@@ -1,11 +1,20 @@
 sudo: false
 services:
   - docker
+language: go
+go: 1.7
+env:
+  - GOOS=linux
 
+before_install:
+ - go get github.com/Masterminds/glide
+ - go install github.com/Masterminds/glide
+install:
+ - glide install
+ - go build
+ - docker build -t "quay.io/experimentalplatform/hostapd:$TRAVIS_BRANCH" --label "build=$TRAVIS_BUILD_NUMBER" --label "commit=$TRAVIS_COMMIT" .
 script:
-  - curl -L https://raw.githubusercontent.com/experimental-platform/build-scripts/master/buildimg.sh | bash
-
-# language: ruby
-# rvm:
-#   - 2.3.0
-# before_install: gem install bundler -v 1.11.2
+ - go test -v -cover
+after_success:
+ - docker login -u "$QUAY_USER" -p "$QUAY_PASS" quay.io
+ - docker push "quay.io/experimentalplatform/hostapd:$TRAVIS_BRANCH"
