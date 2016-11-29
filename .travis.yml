@@ -4,15 +4,14 @@ services:
 language: go
 go: 1.7
 env:
-  - CGO_ENABLED=0
-    GOOS=linux
+  - GOOS=linux
 
 before_install:
  - go get github.com/Masterminds/glide
  - go install github.com/Masterminds/glide
 install:
  - glide install
- - go build -a -installsuffix cgo -v -ldflags='-s -w'
+ - go build
  - docker build -t "quay.io/experimentalplatform/hostapd:$TRAVIS_BRANCH" --label "build=$TRAVIS_BUILD_NUMBER" --label "commit=$TRAVIS_COMMIT" .
 script:
  - go test -v -cover
